@@ -4,34 +4,40 @@
 # Config                                                             #
 ######################################################################
 
+BUILD_PATH                       = build
 ROOTFS_PATH                      = $(BUILD_PATH)/rootfs
 PACKET_CACHE_PATH                = $(BUILD_PATH)/apt_cache
 MULTISTRAP_CONF_FILE             = $(CONF_PATH)/minimal.conf
-TMP_ROOTFS_MOUNT_POINT           = /mnt/tmp_arm_rootfs
+POST_ROOTFS_PATH                 = $(CONF_PATH)/post_rootfs
 QEMU_BOOL_FILES_PATH             = boot_files
+TMP_ROOTFS_MOUNT_POINT           = /mnt/tmp_arm_rootfs
+BZ2_ARCHIVE_FILE                 = $(BUILD_PATH)/rootfs.tar.bz2
 
 CONF_PATH                        = conf
 TARGET_ARCH                      = armhf
-BUILD_PATH                       = build
 TARGET_BLOCK_DEVICE_NAME         = sdc
 ROOTFS_PARTITION_NUMBER          = 2
-ROOTFS_PARTITION_FILESYSTEM_TYPE = ext4
+ROOTFS_PARTITION_FILESYSTEM_TYPE = ext3
 
 
 ######################################################################
 # Derived variables                                                  #
 ######################################################################
 
-SUCCESS_FILE                     = success_file
+ROOTFS_SUCC_FILE                 = rootfs_success_file
+POST_ROOTFS_SUCC_FILE            = post_rootfs_success_file
 TARGET_BLOCK_DEVICE_FILE         = /dev/$(TARGET_BLOCK_DEVICE_NAME)
 ROOTFS_BLOCK_DEVICE_FILE         = $(TARGET_BLOCK_DEVICE_FILE)$(ROOTFS_PARTITION_NUMBER)
 
 QEMU_KERNEL_FILE                 = $(QEMU_BOOL_FILES_PATH)/kernel
 QEMU_INITRD_FILE                 = $(QEMU_BOOL_FILES_PATH)/initrd
 
+
+
 default: build
 
-$(SUCCESS_FILE):
+
+$(ROOTFS_SUCC_FILE):
 	rm -rf $(SUCCESS_FILE)
 	@if [ ! -d $(BUILD_PATH) ]; then \
 		mkdir -p $(BUILD_PATH); \
@@ -43,9 +49,31 @@ $(SUCCESS_FILE):
 		    --dir        $(ROOTFS_PATH)          \
 		    --file       $(MULTISTRAP_CONF_FILE) \
 		    --source-dir $(PACKET_CACHE_PATH)
-	touch $(SUCCESS_FILE)
+	@touch $(ROOTFS_SUCC_FILE)
 
-build: $(SUCCESS_FILE)
+rootfs: $(ROOTFS_SUCC_FILE)
+
+$(BZ2_ARCHIVE_FILE): rootfs
+	tar -cvjf $(BZ2_ARCHIVE_FILE) -C $(ROOTFS_PATH) .
+
+rootfs_bz2: $(BZ2_ARCHIVE_FILE)
+
+$(POST_ROOTFS_SUCC_FILE): rootfs
+	@for POST_FILE in $$(find $(POST_ROOTFS_PATH)); do \
+		if [ -d $${POST_FILE} ]; then continue; fi; \
+		echo "$${POST_FILE}:"; \
+		$${POST_FILE} $(ROOTFS_PATH); \
+	done
+	@touch $(POST_ROOTFS_SUCC_FILE)
+
+post_rootfs: | rootfs $(POST_ROOTFS_SUCC_FILE)
+
+build: | rootfs post_rootfs rootfs_bz2
+
+clean:
+	rm -rf build/
+	rm -f  $(ROOTFS_SUCC_FILE)
+	rm -f  $(POST_ROOTFS_SUCC_FILE)
 
 deploy:
 	@if [ ! -d $(TMP_ROOTFS_MOUNT_POINT) ]; then \
@@ -54,10 +82,9 @@ deploy:
 	@test -b $(TARGET_BLOCK_DEVICE_FILE)                                         || (echo "$(TARGET_BLOCK_DEVICE_FILE) is no block device" && exit 1)
 	@test $$(cat /sys/block/$(TARGET_BLOCK_DEVICE_NAME)/device/model) = "SD/MMC" || (echo "$(TARGET_BLOCK_DEVICE_NAME) is no SD card"      && exit 1)
 	@test -b $(ROOTFS_BLOCK_DEVICE_FILE)                                         || (echo "$(ROOTFS_BLOCK_DEVICE_FILE) is no block device" && exit 1)
-	@eatmydata mkfs.$(ROOTFS_PARTITION_FILESYSTEM_TYPE) $(ROOTFS_BLOCK_DEVICE_FILE)
+	@mkfs.$(ROOTFS_PARTITION_FILESYSTEM_TYPE) $(ROOTFS_BLOCK_DEVICE_FILE)
 	@mount $(ROOTFS_BLOCK_DEVICE_FILE) $(TMP_ROOTFS_MOUNT_POINT)
-	@eatmydata cp -arv $(ROOTFS_PATH)/* $(TMP_ROOTFS_MOUNT_POINT)/
-	@exit 1
+	@cp -arv $(ROOTFS_PATH)/* $(TMP_ROOTFS_MOUNT_POINT)/
 	@umount $(ROOTFS_BLOCK_DEVICE_FILE)
 	@sync
 
