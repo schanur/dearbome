@@ -1,3 +1,8 @@
 build/
 
-success_file
+*_success_file
+
+boot_files/initrd_file
+boot_files/kernel_file
+boot_files/initrd.gz
+boot_files/vmlinuz
