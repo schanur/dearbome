@@ -76,14 +76,22 @@ $(POST_ROOTFS_SUCC_FILE): rootfs
 
 post_rootfs: | rootfs $(POST_ROOTFS_SUCC_FILE)
 	cp /usr/bin/qemu-arm-static $(ROOTFS_PATH)/usr/bin
+	(cd $(ROOTFS_PATH) && mount        -t proc     /proc ./proc)
+	(cd $(ROOTFS_PATH) && mount        -t sysfs    /sys  ./sys)
+	(cd $(ROOTFS_PATH) && mount   udev -t devtmpfs       ./dev)
 	(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C && /var/lib/dpkg/info/dash.preinst install && dpkg --configure -a && mount proc -t proc /proc && dpkg --configure -a && umount /proc")
+	(cd $(ROOTFS_PATH) && umount                         ./proc)
+	(cd $(ROOTFS_PATH) && umount                         ./sys)
+	(cd $(ROOTFS_PATH) && umount                         ./dev)
 
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure dash")
 
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
 
-build: | rootfs post_rootfs rootfs_archive
+build: | rootfs post_rootfs
+
+#rootfs_archive
 
 clean:
 	rm -rf build/rootfs
