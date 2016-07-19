@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -f build/rootfs/linuxrc ]; then
+    echo "hostname already exists."
+    exit 1
+fi
+
+
+echo '#!/bin/sh
+
+echo "Executing /sbin/init \$@"
+exec /sbin/init "$@"
+' > build/rootfs/linuxrc
+
+chmod +x build/rootfs/linuxrc

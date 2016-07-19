@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "
+allow-hotplug eth0
+iface eth0 inet dhcp
+" >> build/rootfs/etc/network/interfaces

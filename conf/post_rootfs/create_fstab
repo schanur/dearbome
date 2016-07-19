@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ -f build/rootfs/etc/fstab ]; then
+    echo "fstab already exists."
+    exit 1
+fi
+
+
+echo "
+/dev/mmcblk0p2 /             auto  rw,auto           0 0
+
+tmpfs          /tmp          tmpfs defaults,size=16m 0 0
+tmpfs          /var/tmp      tmpfs defaults,size=4m  0 0
+proc           /proc         proc  defaults          0 0
+sysfs          /sys          sysfs defaults          0 0
+usbfs          /proc/bus/usb usbfs defaults,noauto   0 0
+tmpfs          /dev          tmpfs defaults,noauto   0 0
+" >> build/rootfs/etc/fstab

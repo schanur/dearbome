@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ -f build/rootfs/etc/hostname ]; then
+    echo "hostname already exists."
+    exit 1
+fi
+
+
+echo "multistrap" > build/rootfs/etc/hostname
