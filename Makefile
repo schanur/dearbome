@@ -12,6 +12,7 @@ POST_ROOTFS_PATH                 = $(CONF_PATH)/post_rootfs
 QEMU_BOOL_FILES_PATH             = boot_files
 TMP_ROOTFS_MOUNT_POINT           = /mnt/tmp_arm_rootfs
 BZ2_ARCHIVE_FILE                 = $(BUILD_PATH)/rootfs.tar.bz2
+GZIP_ARCHIVE_FILE                = $(BUILD_PATH)/rootfs.tar.gz
 
 CONF_PATH                        = conf
 TARGET_ARCH                      = armhf
@@ -58,6 +59,13 @@ $(BZ2_ARCHIVE_FILE): rootfs
 
 rootfs_bz2: $(BZ2_ARCHIVE_FILE)
 
+$(GZIP_ARCHIVE_FILE): rootfs
+	tar -cvzf $(GZIP_ARCHIVE_FILE) -C $(ROOTFS_PATH) .
+
+rootfs_gzip: $(GZIP_ARCHIVE_FILE)
+
+rootfs_archive: rootfs_gzip rootfs_bz2
+
 $(POST_ROOTFS_SUCC_FILE): rootfs
 	@for POST_FILE in $$(find $(POST_ROOTFS_PATH)); do \
 		if [ -d $${POST_FILE} ]; then continue; fi; \
@@ -67,13 +75,20 @@ $(POST_ROOTFS_SUCC_FILE): rootfs
 	@touch $(POST_ROOTFS_SUCC_FILE)
 
 post_rootfs: | rootfs $(POST_ROOTFS_SUCC_FILE)
+	cp /usr/bin/qemu-arm-static $(ROOTFS_PATH)/usr/bin
+	(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C && /var/lib/dpkg/info/dash.preinst install && dpkg --configure -a && mount proc -t proc /proc && dpkg --configure -a && umount /proc")
 
-build: | rootfs post_rootfs rootfs_bz2
+#(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
+#(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure dash")
+
+#(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
+
+build: | rootfs post_rootfs rootfs_archive
 
 clean:
-	rm -rf build/
-	rm -f  $(ROOTFS_SUCC_FILE)
-	rm -f  $(POST_ROOTFS_SUCC_FILE)
+	rm -rf build/rootfs
+	rm -f $(ROOTFS_SUCC_FILE)
+	rm -f $(POST_ROOTFS_SUCC_FILE)
 
 deploy:
 	@if [ ! -d $(TMP_ROOTFS_MOUNT_POINT) ]; then \
