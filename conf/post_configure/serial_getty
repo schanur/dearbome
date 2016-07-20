@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# echo "
+# y[Service]
+# ExecStart=
+# ExecStart=-/usr/bin/agetty --autologin username -s %I 115200,38400,9600 vt102
+# " >> build/rootfs/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+
+echo "
+
+s0:23:respawn:/sbin/getty -L ttymxc0 115200 vt100
+s1:23:respawn:/sbin/getty -L ttymxc1 115200 vt100
+s2:23:respawn:/sbin/getty -L ttymxc2 115200 vt100
+
+# T0:23:respawn:/sbin/getty -L ttyS0 115200 vt100
+# T1:23:respawn:/sbin/getty -L ttyS1 115200 vt100
+# T3:23:respawn:/sbin/getty -L ttyS2 115200 vt100
+# T4:23:respawn:/sbin/getty -L ttyS3 115200 vt100
+" >> build/rootfs/etc/inittab
