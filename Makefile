@@ -9,6 +9,7 @@ ROOTFS_PATH                      = $(BUILD_PATH)/rootfs
 PACKET_CACHE_PATH                = $(BUILD_PATH)/apt_cache
 MULTISTRAP_CONF_FILE             = $(CONF_PATH)/minimal.conf
 POST_ROOTFS_PATH                 = $(CONF_PATH)/post_rootfs
+POST_CONFIGURE_PATH              = $(CONF_PATH)/post_configure
 QEMU_BOOL_FILES_PATH             = boot_files
 TMP_ROOTFS_MOUNT_POINT           = /mnt/tmp_arm_rootfs
 BZ2_ARCHIVE_FILE                 = $(BUILD_PATH)/rootfs.tar.bz2
@@ -83,6 +84,12 @@ post_rootfs: | rootfs $(POST_ROOTFS_SUCC_FILE)
 	@(cd $(ROOTFS_PATH) && umount                         ./proc)
 	@(cd $(ROOTFS_PATH) && umount                         ./sys)
 	@(cd $(ROOTFS_PATH) && umount                         ./dev)
+	@for POST_FILE in $$(find $(POST_CONFIGURE_PATH)); do \
+		if [ -d $${POST_FILE} ]; then continue; fi; \
+		echo "$${POST_FILE}:"; \
+		$${POST_FILE} $(ROOTFS_PATH); \
+	done
+
 
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure dash")
