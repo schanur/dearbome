@@ -1,0 +1,47 @@
+#!/bin/bash
+
+ROOTFS_PATH=${1}
+
+
+echo '
+Section "Device"
+        Identifier      "Generic Video Card"
+        Driver          "fbdev"
+        Option          "Rotate"             "off"
+EndSection
+
+Section "Monitor"
+        Identifier      "Generic Monitor"
+EndSection
+
+Section "Screen"
+        Identifier      "Default Screen"
+        Device          "Generic Video Card"
+        Monitor         "Generic Monitor"
+        DefaultDepth    24
+        SubSection      "Display"
+        Depth           24
+        Modes           "800x480"
+        EndSubSection
+EndSection
+
+# Section "InputDevice"
+#     Identifier        "Pointer"
+#     Driver            "tslib"
+#     Option            "Device"             "/dev/input/touchscreen0"
+#     Option            "CorePointer"        "true"
+#     Option            "SendCoreEvents"     "true"
+# EndSection
+
+# Section "InputDevice"
+#         Identifier    "Keyboard"
+#         Driver        "kbd"
+# EndSection
+
+Section "ServerLayout"
+        Identifier      "Default Layout"
+        Screen          "Default Screen"
+        InputDevice     "Pointer"
+        InputDevice     "Keyboard"
+EndSection
+' >> ${ROOTFS_PATH}/etc/X11/xorg.conf
