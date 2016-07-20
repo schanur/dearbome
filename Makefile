@@ -75,14 +75,14 @@ $(POST_ROOTFS_SUCC_FILE): rootfs
 	@touch $(POST_ROOTFS_SUCC_FILE)
 
 post_rootfs: | rootfs $(POST_ROOTFS_SUCC_FILE)
-	cp /usr/bin/qemu-arm-static $(ROOTFS_PATH)/usr/bin
-	(cd $(ROOTFS_PATH) && mount        -t proc     /proc ./proc)
-	(cd $(ROOTFS_PATH) && mount        -t sysfs    /sys  ./sys)
-	(cd $(ROOTFS_PATH) && mount   udev -t devtmpfs       ./dev)
-	(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C && /var/lib/dpkg/info/dash.preinst install && dpkg --configure -a && mount proc -t proc /proc && dpkg --configure -a && umount /proc")
-	(cd $(ROOTFS_PATH) && umount                         ./proc)
-	(cd $(ROOTFS_PATH) && umount                         ./sys)
-	(cd $(ROOTFS_PATH) && umount                         ./dev)
+	@cp /usr/bin/qemu-arm-static $(ROOTFS_PATH)/usr/bin
+	@(cd $(ROOTFS_PATH) && mount        -t proc     /proc ./proc)
+	@(cd $(ROOTFS_PATH) && mount        -t sysfs    /sys  ./sys)
+	@(cd $(ROOTFS_PATH) && mount   udev -t devtmpfs       ./dev)
+	@(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C && /var/lib/dpkg/info/dash.preinst install && dpkg --configure -a && dpkg --configure -a")
+	@(cd $(ROOTFS_PATH) && umount                         ./proc)
+	@(cd $(ROOTFS_PATH) && umount                         ./sys)
+	@(cd $(ROOTFS_PATH) && umount                         ./dev)
 
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "LC_ALL=C LANGUAGE=C LANG=C dpkg --configure -a")
 #(cd $(ROOTFS_PATH) && chroot . /bin/bash -c "DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true LC_ALL=C LANGUAGE=C LANG=C dpkg --configure dash")
@@ -94,6 +94,9 @@ build: | rootfs post_rootfs
 #rootfs_archive
 
 clean:
+	@(cd $(ROOTFS_PATH) 2> /dev/null && umount ./proc 2> /dev/null) || echo "proc already unmounted."
+	@(cd $(ROOTFS_PATH) 2> /dev/null && umount ./sys  2> /dev/null) || echo "sys already unmounted."
+	@(cd $(ROOTFS_PATH) 2> /dev/null && umount ./dev  2> /dev/null) || echo "dev already unmounted."
 	rm -rf build/rootfs
 	rm -f $(ROOTFS_SUCC_FILE)
 	rm -f $(POST_ROOTFS_SUCC_FILE)
