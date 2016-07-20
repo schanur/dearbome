@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ROOTFS_PATH=${1}
+
+(cd ${ROOTFS_PATH} && chroot . /bin/bash -c "echo root:root |chpasswd")
