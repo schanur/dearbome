@@ -115,6 +115,7 @@ deploy:
 	@test -b $(TARGET_BLOCK_DEVICE_FILE)                                         || (echo "$(TARGET_BLOCK_DEVICE_FILE) is no block device" && exit 1)
 	@test $$(cat /sys/block/$(TARGET_BLOCK_DEVICE_NAME)/device/model) = "SD/MMC" || (echo "$(TARGET_BLOCK_DEVICE_NAME) is no SD card"      && exit 1)
 	@test -b $(ROOTFS_BLOCK_DEVICE_FILE)                                         || (echo "$(ROOTFS_BLOCK_DEVICE_FILE) is no block device" && exit 1)
+	@dd if=/dev/zero of=$(ROOTFS_BLOCK_DEVICE_FILE) bs=1024 count=1024
 	@mkfs.$(ROOTFS_PARTITION_FILESYSTEM_TYPE) $(ROOTFS_BLOCK_DEVICE_FILE)
 	@mount $(ROOTFS_BLOCK_DEVICE_FILE) $(TMP_ROOTFS_MOUNT_POINT)
 	@cp -arv $(ROOTFS_PATH)/* $(TMP_ROOTFS_MOUNT_POINT)/
