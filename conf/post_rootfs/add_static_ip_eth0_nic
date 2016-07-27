@@ -1,6 +1,14 @@
 #!/bin/bash
 
+# echo
+# allow-hotplug eth0
+# iface eth0 inet dhcp
+#   build/rootfs/etc/network/interfaces
+
 echo "
 allow-hotplug eth0
-iface eth0 inet dhcp
+iface eth0 inet static
+      address 192.168.5.220
+      netmask 255.255.0.0
+      gateway 192.168.5.5
 " >> build/rootfs/etc/network/interfaces
